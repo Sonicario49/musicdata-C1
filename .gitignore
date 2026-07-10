@@ -1,0 +1,16 @@
+# Environnements virtuels
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+
+# Données volumineuses / générées (reproductibles via les scripts)
+data/raw/*
+data/external/*
+data/processed/*
+!data/raw/.gitkeep
+!data/external/.gitkeep
+!data/processed/.gitkeep
