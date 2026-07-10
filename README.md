@@ -26,29 +26,45 @@ Peu importe si une source n'est finalement pas utilisée dans l'agrégation fina
 
 ---
 
-## Arborescence cible
+## Statut
+
+**Projet complet : C1 à C5 implémentés, testés sur données réelles, versionnés et poussés
+sur GitHub.** Voir [resumer.txt](resumer.txt) pour un bilan détaillé compétence par
+compétence (chiffres réels, choix techniques justifiés, points d'attention à défendre à
+l'oral). Repo : https://github.com/Sonicario49/musicdata-C1
+
+---
+
+## Arborescence réelle
 
 ```
-musicdata-project/
+musicdata-C1/
 ├── extract/
-│   ├── api_deezer.py
-│   ├── scraping_charts.py
-│   ├── file_csv.py
-│   ├── db_query.py
-│   └── bigdata_duckdb.py
+│   ├── api_deezer.py        # C1 - Web API (Deezer)
+│   ├── scraping_charts.py   # C1 - scraping (kworb.net)
+│   ├── file_csv.py          # C1 - fichier (Kaggle CSV)
+│   ├── db_query.py          # C1/C2 - requête SQL (Postgres)
+│   └── bigdata_duckdb.py    # C1/C2 - Big Data (DuckDB)
 ├── aggregation/
-│   └── aggregate.py
+│   └── aggregate.py         # C3 - agrégation + harmonisation des 5 sources
 ├── db/
-│   ├── schema.sql
-│   └── import.py
+│   ├── schema.sql           # C4 - MCD/MLD, tables + FK + index
+│   ├── seed_source_db.py    # peuple la DB source (MusicBrainz) pour db_query.py
+│   └── import.py            # C4 - import du jeu final dans Postgres
 ├── api/
-│   └── main.py
+│   └── main.py              # C5 - API FastAPI, CRUD + auth par clé API
 ├── docs/
-│   └── tableau_sources.md
+│   ├── tableau_sources.md   # C1 - récap des 5 sources
+│   ├── requetes_sql.md      # C2 - requêtes SQL documentées + EXPLAIN ANALYZE
+│   └── rgpd.md              # C4 - paragraphe RGPD
 ├── data/
-│   ├── raw/          # données brutes sauvegardées par les scripts d'extraction
-│   └── processed/    # jeu de données final après agrégation
+│   ├── raw/          # données brutes normalisées par les scripts d'extraction (gitignored)
+│   ├── external/     # fichiers téléchargés manuellement (Kaggle, gitignored)
+│   └── processed/    # jeu de données final après agrégation (gitignored)
+├── docker-compose.yml  # Postgres local (source + cible)
+├── .env.example        # gabarit des variables d'environnement (credentials, clé API)
 ├── requirements.txt
+├── resumer.txt          # bilan détaillé du projet, compétence par compétence
 └── README.md
 ```
 
@@ -57,66 +73,66 @@ musicdata-project/
 ## Plan d'action détaillé
 
 ### Étape 0 — Setup
-- [ ] Initialiser le repo Git (`git init`, `.gitignore` pour `venv/`, `.env`, `data/raw/*`)
-- [ ] Créer l'environnement virtuel Python + `requirements.txt`
-- [ ] Créer l'arborescence ci-dessus
+- [x] Initialiser le repo Git (`git init`, `.gitignore` pour `venv/`, `.env`, `data/raw/*`)
+- [x] Créer l'environnement virtuel Python + `requirements.txt`
+- [x] Créer l'arborescence ci-dessus
 
 ### Étape 1 — C1 : Extraction des 5 sources
 Pour **chaque** script d'extraction, respecter ces points non négociables :
-- [ ] Point de lancement clair (`if __name__ == "__main__":`)
-- [ ] Initialisation des dépendances / connexions externes
-- [ ] Règles logiques de traitement explicites
-- [ ] Gestion des erreurs et exceptions (try/except, même minimal)
-- [ ] Sauvegarde des résultats en local (`data/raw/`) à la fin du script
-- [ ] Script testé et fonctionnel : toutes les données visées sont bien récupérées
+- [x] Point de lancement clair (`if __name__ == "__main__":`)
+- [x] Initialisation des dépendances / connexions externes
+- [x] Règles logiques de traitement explicites
+- [x] Gestion des erreurs et exceptions (try/except, même minimal)
+- [x] Sauvegarde des résultats en local (`data/raw/`) à la fin du script
+- [x] Script testé et fonctionnel : toutes les données visées sont bien récupérées
 
 Détail par source :
-- [ ] `api_deezer.py` : requête à l'API Deezer, récupération de morceaux/artistes
-- [ ] `scraping_charts.py` : scraping d'une page de charts avec `requests` + `BeautifulSoup`
-- [ ] `file_csv.py` : lecture/nettoyage d'un CSV (Kaggle) avec `pandas`
-- [ ] `db_query.py` : connexion à une DB Postgres, requêtes d'extraction
-- [ ] `bigdata_duckdb.py` : requêtage d'un fichier volumineux via DuckDB
-- [ ] Rédiger `docs/tableau_sources.md` : tableau récapitulatif des 5 sources (source / provenance / type de données / format / techno / volume / champs)
-- [ ] Pour le scraping : garder un screenshot de la page ciblée (pour le rapport, pas pour le code)
+- [x] `api_deezer.py` : requête à l'API Deezer, récupération de morceaux/artistes (50 morceaux)
+- [x] `scraping_charts.py` : scraping d'une page de charts avec `requests` + `BeautifulSoup` (kworb.net, 200 morceaux)
+- [x] `file_csv.py` : lecture/nettoyage d'un CSV (Kaggle) avec `pandas` (114 000 → 81 343 lignes)
+- [x] `db_query.py` : connexion à une DB Postgres, requêtes d'extraction (jointure 3 tables, 92 morceaux)
+- [x] `bigdata_duckdb.py` : requêtage d'un fichier volumineux via DuckDB (586k + 1,16M lignes, 75 843 morceaux)
+- [x] Rédiger `docs/tableau_sources.md` : tableau récapitulatif des 5 sources (source / provenance / type de données / format / techno / volume / champs)
+- [x] Pour le scraping : garder un screenshot de la page ciblée (pour le rapport, pas pour le code) — **à faire manuellement, hors périmètre du code**
 
 ### Étape 2 — C2 : Requêtes SQL
-- [ ] Au moins 2 requêtes SQL fonctionnelles (sur Postgres et/ou DuckDB)
-- [ ] Au moins 1 requête complexe : filtre + condition + jointure
-- [ ] Éviter `SELECT *`
-- [ ] Documenter les choix (sélections, filtrages, jointures) en fonction des objectifs de collecte
-- [ ] Montrer une notion d'optimisation : `EXPLAIN` / `EXPLAIN ANALYZE`, discussion d'un index pertinent
-- [ ] Documenter ces requêtes (dans un fichier `.sql` commenté ou `docs/`)
+- [x] Au moins 2 requêtes SQL fonctionnelles (sur Postgres et/ou DuckDB)
+- [x] Au moins 1 requête complexe : filtre + condition + jointure
+- [x] Éviter `SELECT *`
+- [x] Documenter les choix (sélections, filtrages, jointures) en fonction des objectifs de collecte
+- [x] Montrer une notion d'optimisation : `EXPLAIN` / `EXPLAIN ANALYZE`, discussion d'un index pertinent
+- [x] Documenter ces requêtes (dans un fichier `.sql` commenté ou `docs/`) → `docs/requetes_sql.md`
 
 ### Étape 3 — C3 : Agrégation
-- [ ] Script `aggregation/aggregate.py` qui :
-  - [ ] fusionne au moins 2 sources (JOIN SQL ou concaténation pandas)
-  - [ ] harmonise les formats (ex: durée en secondes partout, genre en minuscules, dates en ISO)
-  - [ ] supprime les entrées corrompues/doublons
-  - [ ] produit **un seul jeu de données final** dans `data/processed/`
-- [ ] Documenter le script : dépendances, commandes d'exécution, logique/ordre de traitement
-- [ ] Si pandas plutôt que SQL : justifier brièvement ce choix dans la doc
+- [x] Script `aggregation/aggregate.py` qui :
+  - [x] fusionne au moins 2 sources (concaténation pandas des 5 sources)
+  - [x] harmonise les formats (durée en secondes partout, genre en minuscules, dates en ISO, popularité normalisée 0-100 par source)
+  - [x] supprime les entrées corrompues/doublons (517 corrompues + 16 278 doublons supprimés)
+  - [x] produit **un seul jeu de données final** dans `data/processed/` (140 733 lignes)
+- [x] Documenter le script : dépendances, commandes d'exécution, logique/ordre de traitement
+- [x] Pandas plutôt que SQL : justifié dans le docstring du script
 
 ### Étape 4 — C4 : Modélisation & stockage DB
-- [ ] Modéliser en Merise (MCD/MLD) : entités type `Artiste`, `Album`, `Morceau`, `Genre`, avec clés primaires/étrangères
-- [ ] Choisir une DB relationnelle (Postgres) et justifier brièvement ce choix
-- [ ] `db/schema.sql` : script de création des tables, fonctionnel sans erreur
-- [ ] `db/import.py` : script d'import du jeu de données final dans la DB, fonctionnel
-- [ ] Documenter : dépendances, commandes d'exécution
-- [ ] RGPD : rédiger un court paragraphe (pas de données perso ici → le mentionner brièvement + dire ce qui serait fait s'il y en avait : registre des traitements, procédure de tri)
+- [x] Modéliser en Merise (MCD/MLD) : entités `Artiste`, `Morceau`, `Genre` (pas d'`Album`, absent du jeu final — justifié dans `db/schema.sql`), avec clés primaires/étrangères
+- [x] Choisir une DB relationnelle (Postgres) et justifier brièvement ce choix
+- [x] `db/schema.sql` : script de création des tables, fonctionnel sans erreur
+- [x] `db/import.py` : script d'import du jeu de données final dans la DB, fonctionnel (44 305 artistes, 1 873 genres, 140 733 morceaux, idempotent)
+- [x] Documenter : dépendances, commandes d'exécution
+- [x] RGPD : `docs/rgpd.md` (pas de données perso, mention de ce qui serait fait sinon)
 
 ### Étape 5 — C5 : API REST sécurisée
-- [ ] Construire l'API avec **FastAPI**
-- [ ] Routes CRUD complètes pour chaque ressource principale (au moins `tracks` et `artists`) :
-  - [ ] `GET /tracks`, `GET /tracks/{id}`, `POST /tracks`, `PUT /tracks/{id}`, `DELETE /tracks/{id}`
-  - [ ] idem pour `/artists`
-- [ ] Documentation Swagger/OpenAPI générée automatiquement (native à FastAPI)
-- [ ] Ajouter une authentification simple (API key en header, ou JWT basique) — au moins un mécanisme qui bloque l'accès sans credentials
+- [x] Construire l'API avec **FastAPI**
+- [x] Routes CRUD complètes pour chaque ressource principale (au moins `tracks` et `artists`) :
+  - [x] `GET /tracks`, `GET /tracks/{id}`, `POST /tracks`, `PUT /tracks/{id}`, `DELETE /tracks/{id}`
+  - [x] idem pour `/artists`
+- [x] Documentation Swagger/OpenAPI générée automatiquement (native à FastAPI)
+- [x] Ajouter une authentification simple (API key en header) — testé : 401 sans clé, 200 avec la bonne clé
 
 ### Étape 6 — Finalisation
-- [ ] Vérifier que **tous** les scripts sont versionnés et poussés sur un dépôt Git distant (GitHub)
-- [ ] Vérifier qu'aucun secret (clé API, mot de passe DB) n'est commité — utiliser `.env` + `.gitignore`
-- [ ] Relire chaque script : gestion d'erreurs présente ? documentation présente ?
-- [ ] Préparer les éléments que je réutiliserai dans mon rapport (captures d'écran, exemples de sorties, tableau récap)
+- [x] Vérifier que **tous** les scripts sont versionnés et poussés sur un dépôt Git distant (GitHub) → https://github.com/Sonicario49/musicdata-C1
+- [x] Vérifier qu'aucun secret (clé API, mot de passe DB) n'est commité — utiliser `.env` + `.gitignore`
+- [x] Relire chaque script : gestion d'erreurs présente ? documentation présente ?
+- [x] Préparer les éléments que je réutiliserai dans mon rapport (captures d'écran, exemples de sorties, tableau récap) — **matière brute disponible dans `resumer.txt` et `docs/`, mise en forme finale à faire par le candidat**
 
 ---
 
@@ -126,4 +142,6 @@ Détail par source :
 - Ne pas sur-complexifier : viser un script fonctionnel et propre plutôt qu'une architecture élaborée — la valeur ajoutée de C4 par exemple est volontairement faible
 
 ## Prochaine étape suggérée
-Commencer par l'Étape 0 (setup) puis avancer script par script dans l'ordre C1 → C2 → C3 → C4 → C5, en validant chaque item de la checklist avant de passer au suivant.
+Le code est terminé (C1 à C5). Reste : le screenshot de la page scrapée, et la rédaction
+du rapport professionnel + la préparation de la soutenance orale (hors périmètre de
+Claude Code) — voir [resumer.txt](resumer.txt) pour la matière brute à réutiliser.
