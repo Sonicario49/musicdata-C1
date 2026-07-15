@@ -1,9 +1,9 @@
-"""API REST du projet (C5) — FastAPI, CRUD sur /tracks et /artists.
+"""API REST du projet (C5), FastAPI, CRUD sur /tracks et /artists.
 
 Technos : FastAPI + Uvicorn, psycopg2 (pas d'ORM). Doc Swagger/OpenAPI générée
 automatiquement par FastAPI (/docs, /redoc).
 
-Choix "pas d'ORM" : mêmes raisons qu'en C2 (docs/requetes_sql.md) — peu de requêtes,
+Choix "pas d'ORM" : mêmes raisons qu'en C2 (docs/requetes_sql.md), peu de requêtes,
 toutes simples, et le schéma est déjà défini une seule fois dans db/schema.sql ; ajouter
 SQLAlchemy dupliquerait ce schéma dans des modèles Python sans bénéfice réel ici.
 
@@ -12,7 +12,7 @@ d'environnement API_KEY. Toute requête sur /tracks ou /artists sans cette clé 
 clé invalide) est rejetée en 401. Suffisant pour la démonstration demandée (C5), pas conçu
 pour de la prod (pas de rotation de clé, pas de scopes).
 
-Lancement : uvicorn api.main:app --reload (depuis la racine du projet)
+Lancement : uvicorn api.main:app --reload --port 8010 (depuis la racine du projet)
 """
 
 from __future__ import annotations

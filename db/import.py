@@ -1,11 +1,11 @@
 """Import du jeu de données final (C3) dans la base Postgres cible (C4).
 
 Technos : PostgreSQL + psycopg2 (pas d'ORM, cf. docs/requetes_sql.md pour la justification
-déjà donnée en C2 — même logique ici : peu de requêtes, on garde la visibilité du SQL brut).
+déjà donnée en C2, même logique ici : peu de requêtes, on garde la visibilité du SQL brut).
 
 Entrée  : data/processed/musicdata_final.csv (produit par aggregation/aggregate.py)
 Cible   : base Postgres "musicdata" (distincte de "musicdata_source" utilisée en C1/C2 pour
-          l'extraction — celle-ci est la base finale du projet, modélisée en db/schema.sql).
+          l'extraction, celle-ci est la base finale du projet, modélisée en db/schema.sql).
 
 Ordre de traitement :
   1. Création de la base cible si elle n'existe pas encore.

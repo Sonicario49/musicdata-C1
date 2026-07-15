@@ -1,14 +1,14 @@
-# Requêtes SQL — C2
+# Requêtes SQL : C2
 
 Ce document couvre la compétence **C2 : requêter des données en SQL, depuis une DB ou un
 système de Big Data**. Les deux requêtes ci-dessous sont celles réellement exécutées par
-`extract/db_query.py` (PostgreSQL) et `extract/bigdata_duckdb.py` (DuckDB) — les chiffres
+`extract/db_query.py` (PostgreSQL) et `extract/bigdata_duckdb.py` (DuckDB) : les chiffres
 et plans d'exécution reproduits ici viennent d'exécutions réelles sur les données du projet,
 pas d'estimations.
 
 ---
 
-## Requête 1 — PostgreSQL (`extract/db_query.py`)
+## Requête 1 : PostgreSQL (`extract/db_query.py`)
 
 ```sql
 SELECT
@@ -80,7 +80,7 @@ transformer une extraction en autant de requêtes que de morceaux.
 
 ---
 
-## Requête 2 — DuckDB (`extract/bigdata_duckdb.py`)
+## Requête 2 : DuckDB (`extract/bigdata_duckdb.py`)
 
 ```sql
 WITH parsed_tracks AS (
@@ -133,7 +133,7 @@ même d'atteindre la jointure. Concrètement, la table `tracks` passe de ~1,1M l
 
 **Constat honnête :** en réécrivant la même requête avec le filtre placé *après* la
 jointure plutôt qu'avant (dans la clause `WHERE` finale au lieu du CTE), le temps mesuré ne
-change quasiment pas (0.43s vs 0.40s sur nos données) — l'optimiseur de DuckDB fait du
+change quasiment pas (0.43s vs 0.40s sur nos données) : l'optimiseur de DuckDB fait du
 *predicate pushdown* automatique et replace le filtre au bon endroit, quel que soit l'ordre
 d'écriture du SQL. On garde quand même le filtre explicite en amont dans le CTE : ça
 documente l'intention pour un·e lecteur·rice humain·e, et ça reste une bonne pratique de
@@ -148,7 +148,7 @@ Ce projet n'utilise pas d'ORM pour les scripts d'extraction : les requêtes sont
 SQL brut via `psycopg2` (Postgres) et l'API Python de `duckdb`. Pour un petit nombre de
 requêtes analytiques bien ciblées comme celles-ci, le SQL brut donne une visibilité directe
 sur la requête réellement exécutée et sur son plan (`EXPLAIN`), ce qu'un ORM a tendance à
-masquer — et c'est précisément cette visibilité qui est évaluée par cette compétence. Un ORM
+masquer , et c'est précisément cette visibilité qui est évaluée par cette compétence. Un ORM
 (ex: SQLAlchemy) sera envisagé pour l'API REST (C5, FastAPI) où les opérations CRUD
 simples sur la base finale bénéficient davantage de sa productivité que de la visibilité
 fine sur chaque requête.

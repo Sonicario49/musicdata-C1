@@ -3,7 +3,7 @@
 Technos : Python + pandas (choix justifié ci-dessous, pas de SQL pour cette étape).
 
 Pourquoi pandas plutôt que SQL ici : les 5 sources sont déjà matérialisées en CSV
-indépendants dans data/raw/ (pas dans un même moteur SQL — Postgres, DuckDB et de
+indépendants dans data/raw/ (pas dans un même moteur SQL, Postgres, DuckDB et de
 simples fichiers coexistent). Les recharger dans une seule base pour faire un JOIN SQL
 ajouterait une étape inutile ; pandas permet de concaténer et nettoyer ces CSV
 hétérogènes directement, avec un contrôle fin (via du code Python lisible) sur chaque

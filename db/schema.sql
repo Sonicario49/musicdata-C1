@@ -3,7 +3,7 @@
 -- Choix de DB : PostgreSQL (relationnel). Justification brève : les données finales sont
 -- tabulaires et structurées (un schéma fixe titre/artiste/genre/durée/date/popularité),
 -- avec des relations simples et stables (un morceau a un seul artiste principal, un seul
--- genre) — un modèle relationnel classique convient mieux qu'une DB documents/NoSQL ici,
+-- genre), un modèle relationnel classique convient mieux qu'une DB documents/NoSQL ici,
 -- et Postgres est déjà utilisé ailleurs dans le projet (source SQL de C1/C2).
 --
 -- MCD (résumé) :
@@ -14,7 +14,7 @@
 --   MORCEAU  --(n,1)--  GENRE     : un morceau a un genre,   un genre a plusieurs morceaux
 --
 -- Pas d'entité Album : le schéma commun du projet (issu de l'agrégation C3) ne contient
--- pas de titre d'album — seulement date de sortie au niveau du morceau. Ajouter une
+-- pas de titre d'album, seulement date de sortie au niveau du morceau. Ajouter une
 -- entité Album synthétique sans vraie donnée de titre n'aurait pas de valeur ajoutée ici.
 --
 -- MLD : voir les CREATE TABLE ci-dessous (clés primaires SERIAL, clés étrangères explicites).
