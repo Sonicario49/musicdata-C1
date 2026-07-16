@@ -4,7 +4,10 @@ Pipeline de collecte, harmonisation et mise à disposition de données musicales
 de 5 sources hétérogènes (API, scraping, fichier, base SQL, Big Data), agrégées en un
 jeu de données unique, stockées dans PostgreSQL, et exposées via une API REST.
 
-Schéma commun : `titre, artiste, genre, durée, date de sortie, popularité`.
+Chaque extraction sauvegarde uniquement la donnée brute, dans le format natif de sa
+source (JSON, HTML, CSV natif, Parquet natif) : le nettoyage et l'harmonisation vers le
+schéma commun (`titre, artiste, genre, durée, date de sortie, popularité`) sont entièrement
+faits à l'étape d'agrégation (C3), pas à l'extraction.
 
 ## Stack technique
 
@@ -18,14 +21,14 @@ Schéma commun : `titre, artiste, genre, durée, date de sortie, popularité`.
 ## Structure du projet
 
 ```
-extract/            scripts d'extraction, un par source
-  api_deezer.py        API Deezer (Web API)
-  scraping_charts.py    kworb.net (scraping)
-  file_csv.py           dataset Kaggle "Spotify Tracks Dataset" (fichier)
-  db_query.py            requête PostgreSQL (base SQL)
-  bigdata_duckdb.py      requête DuckDB sur CSV volumineux (Big Data)
+extract/            scripts d'extraction, un par source (raw uniquement, pas de normalisation)
+  api_deezer.py        API Deezer (Web API) -> JSON brut
+  scraping_charts.py    kworb.net (scraping) -> HTML brut
+  file_csv.py           dataset Kaggle "Spotify Tracks Dataset" (fichier) -> copie CSV native
+  db_query.py            requête PostgreSQL (base SQL) -> CSV aux colonnes natives
+  bigdata_duckdb.py      requête DuckDB sur Parquet volumineux (Big Data) -> Parquet aux colonnes natives
 aggregation/
-  aggregate.py           fusionne et harmonise les 5 sources en un jeu final
+  aggregate.py           parse les 5 formats natifs, harmonise et fusionne en un jeu final (Parquet)
 db/
   schema.sql              modèle Merise (MCD/MLD) de la base cible
   seed_source_db.py       peuple la base source depuis l'API MusicBrainz
@@ -37,9 +40,9 @@ docs/
   requetes_sql.md         requêtes SQL documentées (EXPLAIN ANALYZE, optimisation)
   rgpd.md                 volet RGPD
 data/
-  raw/                    sorties normalisées des scripts d'extraction (ignoré par Git)
+  raw/                    sorties brutes (natives) des scripts d'extraction (ignoré par Git)
   external/                fichiers téléchargés manuellement (ignoré par Git)
-  processed/               jeu de données final après agrégation (ignoré par Git)
+  processed/               jeu de données final après agrégation, en Parquet (ignoré par Git)
 ```
 
 ## Installation
@@ -54,13 +57,12 @@ cp .env.example .env   # puis renseigner un mot de passe et une clé API
 docker compose up -d   # démarre PostgreSQL sur localhost:5432
 ```
 
-Deux fichiers doivent être téléchargés manuellement avant de lancer certains scripts
-(comptes Kaggle gratuits requis) :
+Deux fichiers doivent être téléchargés manuellement avant de lancer certains scripts :
 
 | Fichier à placer dans `data/external/` | Source |
 |---|---|
-| `spotify_tracks_kaggle.csv` | [Spotify Tracks Dataset](https://www.kaggle.com/datasets/maharshipandya/spotify-tracks-dataset) |
-| `tracks.csv` + `artists.csv` | [Spotify Dataset 1921-2020, 600k+ Tracks](https://www.kaggle.com/datasets/yamaerenay/spotify-dataset-19212020-600k-tracks) |
+| `spotify_tracks_kaggle.csv` | [Spotify Tracks Dataset](https://www.kaggle.com/datasets/maharshipandya/spotify-tracks-dataset) (compte Kaggle gratuit requis) |
+| `spotify-huge-audio-features.parquet` | Spotify Huge Track Analysis Dataset (56,3M lignes, ~4.1 Go , voir `data/external/README_spotify_huge_audio_features.md`) |
 
 ## Utilisation
 
@@ -70,14 +72,14 @@ Lancer les étapes dans cet ordre depuis la racine du projet :
 # 1. Peupler la base source (MusicBrainz) utilisée par db_query.py
 python db/seed_source_db.py
 
-# 2. Extraction des 5 sources -> data/raw/*.csv
+# 2. Extraction des 5 sources -> data/raw/ (format natif : JSON, HTML, CSV, Parquet)
 python extract/api_deezer.py
 python extract/scraping_charts.py
 python extract/file_csv.py
 python extract/db_query.py
 python extract/bigdata_duckdb.py
 
-# 3. Agrégation des 5 sources -> data/processed/musicdata_final.csv
+# 3. Agrégation des 5 sources -> data/processed/musicdata_final.parquet
 python aggregation/aggregate.py
 
 # 4. Import du jeu final dans la base cible PostgreSQL

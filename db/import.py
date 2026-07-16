@@ -3,14 +3,14 @@
 Technos : PostgreSQL + psycopg2 (pas d'ORM, cf. docs/requetes_sql.md pour la justification
 déjà donnée en C2, même logique ici : peu de requêtes, on garde la visibilité du SQL brut).
 
-Entrée  : data/processed/musicdata_final.csv (produit par aggregation/aggregate.py)
+Entrée  : data/processed/musicdata_final.parquet (produit par aggregation/aggregate.py)
 Cible   : base Postgres "musicdata" (distincte de "musicdata_source" utilisée en C1/C2 pour
           l'extraction, celle-ci est la base finale du projet, modélisée en db/schema.sql).
 
 Ordre de traitement :
   1. Création de la base cible si elle n'existe pas encore.
   2. Application du schéma (db/schema.sql, idempotent : CREATE TABLE/INDEX IF NOT EXISTS).
-  3. Chargement du CSV final.
+  3. Chargement du Parquet final.
   4. Insertion des artistes et genres uniques (ON CONFLICT DO NOTHING sur le nom).
   5. Insertion des morceaux, avec résolution des clés étrangères vers artiste/genre.
 """
@@ -33,7 +33,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
-INPUT_CSV_PATH = PROJECT_ROOT / "data" / "processed" / "musicdata_final.csv"
+INPUT_PARQUET_PATH = PROJECT_ROOT / "data" / "processed" / "musicdata_final.parquet"
 
 PG_HOST = os.environ.get("POSTGRES_HOST", "localhost")
 PG_PORT = os.environ.get("POSTGRES_PORT", "5432")
@@ -75,11 +75,11 @@ def apply_schema(conn) -> None:
 
 
 def load_final_dataset() -> pd.DataFrame:
-    if not INPUT_CSV_PATH.exists():
+    if not INPUT_PARQUET_PATH.exists():
         raise ImportError_(
-            f"Fichier introuvable : {INPUT_CSV_PATH}. Lance d'abord aggregation/aggregate.py."
+            f"Fichier introuvable : {INPUT_PARQUET_PATH}. Lance d'abord aggregation/aggregate.py."
         )
-    df = pd.read_csv(INPUT_CSV_PATH, dtype={"date_sortie": str})
+    df = pd.read_parquet(INPUT_PARQUET_PATH)
     df["date_sortie"] = df["date_sortie"].apply(lambda v: None if pd.isna(v) or v == "" else v)
     return df
 

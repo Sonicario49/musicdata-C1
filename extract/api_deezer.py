@@ -2,15 +2,19 @@
 
 Documentation API : https://developers.deezer.com/api
 Aucune authentification requise pour les endpoints utilisés ici.
+
+Ce script se contente de récupérer et sauvegarder les payloads JSON bruts tels
+que renvoyés par Deezer (schéma natif de l'API : "title", "artist.name",
+"duration", "rank", "album.release_date", "album.genres"...). Aucun
+renommage vers le schéma commun du projet, aucune conversion : cette
+normalisation est la responsabilité d'aggregation/aggregate.py.
 """
 
 from __future__ import annotations
 
-import csv
 import json
 import logging
 import time
-from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import requests
@@ -24,17 +28,7 @@ REQUEST_TIMEOUT = 10  # secondes
 RATE_LIMIT_DELAY = 0.2  # secondes entre deux appels (quota Deezer : 50 req / 5s)
 
 RAW_DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
-
-
-@dataclass
-class Track:
-    titre: str
-    artiste: str
-    genre: str
-    duree_secondes: int
-    date_sortie: str
-    popularite: int
-    source: str = "api_deezer"
+OUTPUT_JSON_PATH = RAW_DATA_DIR / "deezer_raw.json"
 
 
 class DeezerExtractionError(Exception):
@@ -72,10 +66,9 @@ class DeezerClient:
         return self._get(f"/album/{album_id}")
 
 
-def extract_tracks(client: DeezerClient, limit: int = CHART_LIMIT) -> tuple[list[Track], list[dict]]:
-    """Construit la liste des morceaux normalisés et conserve les payloads bruts pour audit."""
+def extract_raw_payloads(client: DeezerClient, limit: int = CHART_LIMIT) -> list[dict]:
+    """Récupère le chart et l'album associé à chaque morceau, sans normalisation."""
     raw_payloads: list[dict] = []
-    tracks: list[Track] = []
     album_cache: dict[int, dict] = {}
 
     chart_tracks = client.get_chart_tracks(limit=limit)
@@ -95,57 +88,32 @@ def extract_tracks(client: DeezerClient, limit: int = CHART_LIMIT) -> tuple[list
                 logger.warning("Album %s inaccessible, morceau ignoré : %s", album_id, exc)
                 continue
 
-        album = album_cache[album_id]
-        raw_payloads.append({"track": raw_track, "album": album})
+        raw_payloads.append({"track": raw_track, "album": album_cache[album_id]})
 
-        genres = album.get("genres", {}).get("data", [])
-        genre = genres[0]["name"] if genres else "inconnu"
-
-        tracks.append(
-            Track(
-                titre=raw_track.get("title", ""),
-                artiste=raw_track.get("artist", {}).get("name", ""),
-                genre=genre,
-                duree_secondes=raw_track.get("duration", 0),
-                date_sortie=album.get("release_date", ""),
-                popularite=raw_track.get("rank", 0),
-            )
-        )
-
-    return tracks, raw_payloads
+    return raw_payloads
 
 
-def save_results(tracks: list[Track], raw_payloads: list[dict]) -> None:
+def save_results(raw_payloads: list[dict]) -> None:
     RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-    csv_path = RAW_DATA_DIR / "deezer_tracks.csv"
-    with csv_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(asdict(tracks[0]).keys()))
-        writer.writeheader()
-        for track in tracks:
-            writer.writerow(asdict(track))
-    logger.info("Résultats normalisés sauvegardés : %s (%d lignes)", csv_path, len(tracks))
-
-    json_path = RAW_DATA_DIR / "deezer_raw.json"
-    with json_path.open("w", encoding="utf-8") as f:
+    with OUTPUT_JSON_PATH.open("w", encoding="utf-8") as f:
         json.dump(raw_payloads, f, ensure_ascii=False, indent=2)
-    logger.info("Payloads bruts sauvegardés (audit/traçabilité) : %s", json_path)
+    logger.info("Payloads bruts sauvegardés : %s (%d morceaux)", OUTPUT_JSON_PATH, len(raw_payloads))
 
 
 def main() -> None:
     client = DeezerClient()
     try:
-        tracks, raw_payloads = extract_tracks(client)
+        raw_payloads = extract_raw_payloads(client)
     except DeezerExtractionError as exc:
         logger.error("Extraction interrompue : %s", exc)
         return
 
-    if not tracks:
+    if not raw_payloads:
         logger.error("Aucun morceau extrait, rien à sauvegarder.")
         return
 
-    save_results(tracks, raw_payloads)
-    logger.info("Extraction Deezer terminée avec succès : %d morceaux.", len(tracks))
+    save_results(raw_payloads)
+    logger.info("Extraction Deezer terminée avec succès : %d morceaux.", len(raw_payloads))
 
 
 if __name__ == "__main__":
